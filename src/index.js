@@ -93,6 +93,10 @@ async function start() {
     return reply.status(200).send({ success: true, message: `Relay key ${key} updated` });
   });
 
+  app.get('/health', async (request, reply) => {
+    return reply.status(200).send({ status: 'ok' });
+  });
+
   registerWebhooks(app, proxies);
   registerPolling(proxies);
 
