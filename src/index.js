@@ -1,5 +1,5 @@
 import fastify from 'fastify';
-import { readFile } from 'fs/promises';
+import { readFile, writeFile, mkdir } from 'fs/promises';
 import { registerWebhooks } from './server/webhooks.js';
 import { registerPolling } from './engine/scheduler.js';
 import { ConfigSchema } from './engine/schema.js';
@@ -10,7 +10,27 @@ const app = fastify({ logger: false });
 
 async function start() {
   await relayStore.init();
-  const configFile = await readFile('./config/config.json', 'utf-8');
+  const configDir = './config';
+  const configPath = `${configDir}/config.json`;
+  try {
+    await mkdir(configDir, { recursive: true });
+  } catch (err) {}
+  let configFile;
+  try {
+    configFile = await readFile(configPath, 'utf-8');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      const defaultConfig = {
+        enableTesting: false,
+        proxies: []
+      };
+      await writeFile(configPath, JSON.stringify(defaultConfig, null, 2), 'utf-8');
+      configFile = JSON.stringify(defaultConfig);
+      console.log(`[CONFIG INITIALIZED] Created default configuration file at ${configPath}`);
+    } else {
+      throw err;
+    }
+  }
   const parsedConfig = JSON.parse(configFile);
   const { proxies, enableTesting } = ConfigSchema.parse(parsedConfig);
 
