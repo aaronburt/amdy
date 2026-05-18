@@ -36,8 +36,11 @@ async function start() {
 
   await app.register(fastifyWebsocket);
 
-  app.get('/relay/:key/stream', { websocket: true }, (connection, req) => {
-    const { key } = req.params;
+  const haProxy = proxies.find(p => p.source?.url?.includes('ha.aaronburt.co.uk'));
+  const haToken = haProxy?.source?.headers?.['Authorization'] || haProxy?.source?.headers?.['authorization'];
+
+  app.get('/relay-stream/*', { websocket: true }, (connection, req) => {
+    const key = req.params['*'];
     if (relayStore.has(key)) {
       connection.socket.send(JSON.stringify({ event: 'initial', data: relayStore.get(key) }));
     }
@@ -50,19 +53,42 @@ async function start() {
     });
   });
 
-  app.get('/relay/:key', async (request, reply) => {
-    const { key } = request.params;
+  app.get('/relay/*', async (request, reply) => {
+    const key = request.params['*'];
+    if (!relayStore.has(key) && key.startsWith('home/') && haToken) {
+      const entity = key.replace('home/', '');
+      try {
+        const response = await fetch(`https://ha.aaronburt.co.uk/api/states/${entity}`, {
+          headers: {
+            'Authorization': haToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const location = {
+            latitude: data.attributes?.latitude,
+            longitude: data.attributes?.longitude,
+            state: data.state
+          };
+          await relayStore.set(key, location);
+        }
+      } catch (err) {
+        console.error(`[DYNAMIC RESOLVER ERROR] Failed to fetch state for ${entity}:`, err.message);
+      }
+    }
+
     if (relayStore.has(key)) {
       return reply.status(200).send(relayStore.get(key));
     }
     return reply.status(404).send({ error: 'Not Found', message: `No relayed data found for key: ${key}` });
   });
 
-  app.post('/relay/:key', async (request, reply) => {
+  app.post('/relay/*', async (request, reply) => {
     if (!enableTesting) {
       return reply.status(403).send({ error: 'Forbidden', message: 'Manual relay updates are disabled. Set enableTesting: true to enable.' });
     }
-    const { key } = request.params;
+    const key = request.params['*'];
     await relayStore.set(key, request.body);
     return reply.status(200).send({ success: true, message: `Relay key ${key} updated` });
   });

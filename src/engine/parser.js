@@ -27,7 +27,11 @@ export function interpolate(template, variables) {
 export function extractVariables(sourceData, mappings) {
   const variables = {};
   for (const [varName, path] of Object.entries(mappings)) {
-    variables[varName] = get(sourceData, path);
+    let val = get(sourceData, path);
+    if (typeof val === 'string' && isNaN(Number(val)) && !isNaN(Date.parse(val))) {
+      val = Date.parse(val);
+    }
+    variables[varName] = val;
   }
   return variables;
 }

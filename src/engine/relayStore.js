@@ -30,10 +30,15 @@ export const relayStore = {
   },
   get: (key) => store.get(key),
   set: async (key, value) => {
-    store.set(key, value);
+    const existing = store.get(key);
+    let newValue = value;
+    if (existing && typeof existing === 'object' && value && typeof value === 'object' && !Array.isArray(existing) && !Array.isArray(value)) {
+      newValue = { ...existing, ...value };
+    }
+    store.set(key, newValue);
     await saveCache();
-    emitter.emit(key, value);
-    return value;
+    emitter.emit(key, newValue);
+    return newValue;
   },
   has: (key) => store.has(key),
   delete: async (key) => {
