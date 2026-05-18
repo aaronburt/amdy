@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  api-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: amdy-api-proxy
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./config:/app/config:ro
+    environment:
+      - PORT=3000
+      - NODE_ENV=production

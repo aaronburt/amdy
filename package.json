@@ -1,0 +1,17 @@
+{
+  "name": "amdy-api-proxy",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "mock": "node test/mock-server.js",
+    "test": "node test/verify.js"
+  },
+  "dependencies": {
+    "@fastify/websocket": "^8.3.0",
+    "fastify": "^4.28.1",
+    "node-cron": "^3.0.3",
+    "zod": "^4.4.3"
+  }
+}
