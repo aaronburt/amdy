@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const ProxySchema = z.object({
-  type: z.enum(['webhook', 'polling']),
+  type: z.enum(['webhook', 'polling', 'relay']),
   schedule: z.string().optional(),
   source: z.object({
     path: z.string().optional(),
@@ -24,9 +24,12 @@ const ProxySchema = z.object({
   if (data.type === 'polling') {
     return typeof data.source.url === 'string' && typeof data.schedule === 'string';
   }
+  if (data.type === 'relay') {
+    return typeof data.source.path === 'string' && data.source.path.startsWith('/') && typeof data.source.url === 'string';
+  }
   return false;
 }, {
-  message: "Webhook requires a valid source.path starting with '/'. Polling requires source.url and schedule."
+  message: "Webhook requires source.path. Polling requires source.url and schedule. Relay requires source.path and source.url."
 });
 
 export const ConfigSchema = z.object({

@@ -2,6 +2,7 @@ import fastify from 'fastify';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { registerWebhooks } from './server/webhooks.js';
 import { registerPolling } from './engine/scheduler.js';
+import { registerRelayRoutes } from './server/relayRoutes.js';
 import { ConfigSchema } from './engine/schema.js';
 import { relayStore } from './engine/relayStore.js';
 import fastifyWebsocket from '@fastify/websocket';
@@ -98,6 +99,7 @@ async function start() {
   });
 
   registerWebhooks(app, proxies);
+  registerRelayRoutes(app, proxies);
   registerPolling(proxies);
 
   const port = process.env.PORT || 3000;
